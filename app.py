@@ -3,50 +3,87 @@ import os
 from groq import Groq
 from dotenv import load_dotenv
 from pypdf import PdfReader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+import chromadb
+from chromadb.utils import embedding_functions
+
+# --- SETUP ---
+load_dotenv()
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+# Initialize ChromaDB
+chroma_client = chromadb.PersistentClient(path="./my_vector_db")
+sentence_transformer_ef = embedding_functions.SentenceTransformerEmbeddingFunction(
+    model_name="all-MiniLM-L6-v2"
+)
 
 
-# 1. Helper Function to extract text from PDF
+# --- FUNCTIONS ---
 def get_pdf_text(pdf_file):
     text = ""
     pdf_reader = PdfReader(pdf_file)
     for page in pdf_reader.pages:
-        content = page.extract_text()
-        if content:  # Only add if text exists on the page
-            text += content
+        page_text = page.extract_text()
+        if page_text:
+            text += page_text
     return text
 
 
-# 2. Browser Tab & UI Setup
+def get_text_chunks(raw_text):
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000, chunk_overlap=200, length_function=len
+    )
+    return text_splitter.split_text(raw_text)
+
+
+# --- UI ---
 st.set_page_config(page_title="Enterprise AI Agent", page_icon="💼")
-load_dotenv()
-
-# 3. Initialize AI Brain (Groq)
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-
 st.title("💼 Enterprise AI Document Agent")
-st.write("Upload a business document, and I will analyze it using Llama 3.3.")
+st.write("Upload a document to search its meaning using RAG technology.")
 
-# 4. User Inputs
 uploaded_file = st.file_uploader("Upload a Business Document", type=["txt", "pdf"])
 user_instruction = st.text_input(
-    "What should I do with this file?",
-    value="Summarize this document in 3 bullet points.",
+    "Ask a question about this file:",
+    value="What are the key points of this document?",
 )
 
-# 5. The Core Logic (The "Action" Button)
 if st.button("Analyze Document"):
     if uploaded_file is not None:
-        with st.spinner("Processing document..."):
-            # Step A: Extract text based on file type
+        with st.spinner("🧠 Vectorizing and Searching..."):
+            # 1. Extract Text
             if uploaded_file.type == "application/pdf":
-                document_text = get_pdf_text(uploaded_file)
+                raw_text = get_pdf_text(uploaded_file)
             else:
-                document_text = uploaded_file.getvalue().decode("utf-8")
+                raw_text = uploaded_file.getvalue().decode("utf-8")
 
-            # Step B: Prepare the Enterprise Prompt
-            full_prompt = f"Here is a document:\n\n{document_text}\n\nInstruction: {user_instruction}"
+            # 2. Chunking
+            text_chunks = get_text_chunks(raw_text)
 
-            # Step C: Send to AI Brain
+            # 3. RESET COLLECTION (The Fix for the ValueError)
+            try:
+                chroma_client.delete_collection(name="corporate_docs")
+            except:
+                pass
+
+            collection = chroma_client.create_collection(
+                name="corporate_docs", embedding_function=sentence_transformer_ef
+            )
+
+            # 4. STORE
+            ids = [f"id_{i}" for i in range(len(text_chunks))]
+            collection.add(documents=text_chunks, ids=ids)
+
+            # 5. VECTOR QUERY
+            results = collection.query(
+                query_texts=[user_instruction],
+                n_results=5,
+            )
+
+            final_context = "\n\n".join(results["documents"][0])
+
+            # 6. LLM CALL
+            full_prompt = f"Use these snippets to answer: {user_instruction}\n\nSnippets:\n{final_context}"
+
             try:
                 response = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
@@ -55,12 +92,10 @@ if st.button("Analyze Document"):
 
                 st.subheader("Analysis Result:")
                 st.success(response.choices[0].message.content)
-                report_text = response.choices[0].message.content
                 st.download_button(
-                    label="📥 Download Analysis Report",
-                    data=report_text,
-                    file_name="AI_Analysis_Report.txt",
-                    mime="text/plain",
+                    label="📥 Download Report",
+                    data=response.choices[0].message.content,
+                    file_name="Report.txt",
                 )
             except Exception as e:
                 st.error(f"AI Error: {e}")
