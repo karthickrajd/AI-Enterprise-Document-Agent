@@ -46,3 +46,16 @@
 - [ ] Implement **Vector Embeddings** (Semantic Search).
 - [ ] Integrate **ChromaDB** (Vector Database).
 - [ ] Develop **Full RAG Architecture** for multi-document intelligence.
+
+---
+
+---
+
+## 🗓️ Day 4: The Intelligent Knowledge Base (RAG)
+- **Goal:** Move from simple keyword filtering to "Semantic Meaning" search.
+- **Actions:**
+  - Integrated **ChromaDB** as a persistent local Vector Database.
+  - Implemented **Sentence-Transformers** (`all-MiniLM-L6-v2`) to convert text into high-dimensional vectors (GPS for meaning).
+  - Debugged a complex `ValueError` by implementing a "Delete and Recreate" collection logic to stay compatible with the latest ChromaDB API.
+  - **The RAG Pattern:** Successfully limited the AI context to only the top 5 most relevant "slices" of data.
+- **Outcome:** The agent can now process 75+ page PDFs with zero "Token Limit" errors and much higher accuracy.
