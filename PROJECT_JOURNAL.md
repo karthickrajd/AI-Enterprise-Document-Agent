@@ -49,8 +49,6 @@
 
 ---
 
----
-
 ## 🗓️ Day 4: The Intelligent Knowledge Base (RAG)
 - **Goal:** Move from simple keyword filtering to "Semantic Meaning" search.
 - **Actions:**
@@ -59,3 +57,15 @@
   - Debugged a complex `ValueError` by implementing a "Delete and Recreate" collection logic to stay compatible with the latest ChromaDB API.
   - **The RAG Pattern:** Successfully limited the AI context to only the top 5 most relevant "slices" of data.
 - **Outcome:** The agent can now process 75+ page PDFs with zero "Token Limit" errors and much higher accuracy.
+
+---
+
+## 🗓️ Day 5: The Professional Chat UI & State Management
+- **Goal:** Transform the one-shot script into a persistent, user-friendly Chat Application.
+- **Actions:**
+  - **Implemented Streamlit Session State:** Developed a "History Notebook" to maintain chat messages across page reruns.
+  - **Reactive UI Design:** Built a Sidebar-centric workflow that separates Document Indexing from the Conversation.
+  - **State Synchronization:** Debugged and resolved a "UI Sync Bug" using conditional logic to clear session memory when files are removed.
+  - **Proactive Intelligence:** Added an "Auto-Summary" feature that triggers immediately after indexing to provide a 3-bullet point executive overview.
+  - **Trust-Based AI (Citations):** Integrated raw document snippets into AI responses so users can verify the source of every claim.
+- **Outcome:** A polished, SaaS-style Enterprise Agent that feels like a real product. The "Token Limit" is now a thing of the past.
