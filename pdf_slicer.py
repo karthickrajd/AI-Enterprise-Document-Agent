@@ -4,6 +4,22 @@ from groq import Groq
 from dotenv import load_dotenv
 from pypdf import PdfReader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+import chromadb
+from chromadb.utils import embedding_functions
+
+# Initialize the "Closet" (Vector Database)
+# This creates a folder on your PC called 'my_vector_db' to store data
+chroma_client = chromadb.PersistentClient(path="./my_vector_db")
+
+# Tell Chroma to use the Sentence Transformer for addresses
+sentence_transformer_ef = embedding_functions.SentenceTransformerEmbeddingFunction(
+    model_name="all-MiniLM-L6-v2"
+)
+
+# Create a "Collection" (This is like a folder inside your database)
+collection = chroma_client.get_or_create_collection(
+    name="corporate_docs", embedding_function=sentence_transformer_ef
+)
 
 
 # 1. Extract text from PDF (You already built this!)
