@@ -105,6 +105,7 @@ with st.sidebar:
         type="pdf",
         accept_multiple_files=True,
         disabled=st.session_state.processing,
+        key="file_uploader_mobile",
     )
 
     # Validation: Check if new files need indexing
