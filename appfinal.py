@@ -23,8 +23,12 @@ from io import BytesIO
 load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# USE A PERSISTENT PATH COMPATIBLE WITH CLOUD
-DB_PATH = "./my_vector_db"
+# Use a path that Streamlit Cloud has permission to write to
+if os.environ.get("STREAMLIT_RUNTIME_ENV"):  # Check if we are on the Cloud
+    DB_PATH = "/tmp/my_vector_db"
+else:
+    DB_PATH = "./my_vector_db"
+
 chroma_client = chromadb.PersistentClient(path=DB_PATH)
 sentence_transformer_ef = embedding_functions.SentenceTransformerEmbeddingFunction(
     model_name="all-MiniLM-L6-v2"
@@ -101,9 +105,8 @@ with st.sidebar:
     )
 
     # --- INDEXING ACTION ---
-    if st.button(
-        "Index All Files", disabled=st.session_state.processing or not uploaded_files
-    ):
+    if st.button("📚 Index All Files"):
+
         st.session_state.processing = True
         try:
             # Delete and recreate to ensure a fresh index on every "Index All" click
